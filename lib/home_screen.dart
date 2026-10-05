@@ -6,6 +6,9 @@ import 'daily_price_screen.dart';
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http; // <-- เพิ่มการนำเข้า http
+import 'dart:convert'; // <-- เพิ่มการนำเข้า json convert
+import 'views/purchase_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -16,6 +19,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   String _username = "";
+  String _todayPrice = "-"; // <-- เพิ่มตัวแปรสำหรับเก็บราคาของวันนี้
 
   // สำหรับสไลด์ Banner อัตโนมัติ
   final PageController _bannerController = PageController();
@@ -26,6 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadUserData();
+    _fetchTodayPrice(); // <-- เรียกดึงราคาของวันนี้
     _startBannerAutoSlide();
   }
 
@@ -40,6 +45,34 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _username = prefs.getString("username") ?? "ผู้ใช้งาน";
     });
+  }
+
+  // 📌 ฟังก์ชันดึงราคาของวันนี้จาก API Backend
+  Future<void> _fetchTodayPrice() async {
+    final url = Uri.parse("http://127.0.0.1:3000/api/price/get_today_price");
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['isError'] == false && data['data'] != null) {
+          setState(() {
+            _todayPrice = "฿${data['data']['buy_price']}";
+          });
+        } else {
+          setState(() {
+            _todayPrice = "ยังไม่กำหนด";
+          });
+        }
+      } else {
+        setState(() {
+          _todayPrice = " error";
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _todayPrice = "-";
+      });
+    }
   }
 
   // ลูกเล่นสไลด์ Banner ทุกๆ 3 วินาที
@@ -61,14 +94,18 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
-      
+
       // AppBar ด้านบนพร้อมปุ่ม 3 ขีด
       appBar: AppBar(
         backgroundColor: const Color(0xFF1E2538),
         elevation: 0,
         title: const Text(
           "หน้าหลัก",
-          style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         centerTitle: true,
         iconTheme: const IconThemeData(color: Colors.white), // ปุ่ม 3 ขีดสีขาว
@@ -160,18 +197,23 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Image.asset(
                         'assets/tar.png',
                         fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) => const Icon(
-                          Icons.business,
-                          size: 40,
-                          color: Color(0xFF2E6D52),
-                        ),
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Icon(
+                              Icons.business,
+                              size: 40,
+                              color: Color(0xFF2E6D52),
+                            ),
                       ),
                     ),
                   ),
                   const SizedBox(height: 10),
                   const Text(
                     "บริษัท พัทลุงพาราเท็กซ์ จำกัด",
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
                   ),
                 ],
               ),
@@ -183,58 +225,108 @@ class _HomeScreenState extends State<HomeScreen> {
                   _buildDrawerItem(
                     index: 0,
                     currentIndex: currentIndex,
-                    emoji: "🏡", 
-                    label: "หน้าหลัก", 
+                    emoji: "🏡",
+                    label: "หน้าหลัก",
                     onTap: () => Navigator.pop(context),
                   ),
                   _buildDrawerItem(
                     index: 1,
                     currentIndex: currentIndex,
-                    emoji: "➕", 
-                    label: "ลงทะเบียนเกษตรกร", 
+                    emoji: "➕",
+                    label: "ลงทะเบียนเกษตรกร",
                     onTap: () {
                       Navigator.pop(context);
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => const RegisterFarmerScreen()));
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const RegisterFarmerScreen(),
+                        ),
+                      );
                     },
                   ),
                   _buildDrawerItem(
                     index: 2,
                     currentIndex: currentIndex,
-                    emoji: "📋", 
-                    label: "รายชื่อเกษตรกร", 
+                    emoji: "📋",
+                    label: "รายชื่อเกษตรกร",
                     onTap: () {
                       Navigator.pop(context);
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => const FarmerListScreen()));
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const FarmerListScreen(),
+                        ),
+                      );
                     },
                   ),
                   _buildDrawerItem(
                     index: 3,
                     currentIndex: currentIndex,
-                    emoji: "🚗", 
-                    label: "ลงทะเบียนรถ", 
+                    emoji: "🚗",
+                    label: "ลงทะเบียนรถ",
                     onTap: () {
                       Navigator.pop(context);
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => const RegisterVehicleScreen()));
+
+                      // ดึงเฉพาะตัวเลขราคารับซื้อออกจากสตริง (เช่น "฿55.0" -> 55.0)
+                      final cleanPriceText = _todayPrice
+                          .replaceAll('฿', '')
+                          .trim();
+                      final double parsedPrice =
+                          double.tryParse(cleanPriceText) ?? 0.0;
+
+                      // ดึงวันที่ปัจจุบันในรูปแบบ YYYY-MM-DD สำหรับ priceId
+                      final String todayDateStr = DateTime.now()
+                          .toIso8601String()
+                          .split('T')[0];
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const RegisterVehicleScreen(),
+                        ),
+                      );
                     },
                   ),
                   _buildDrawerItem(
-                    index: 4,
-                    currentIndex: currentIndex,
-                    emoji: "💧", 
-                    label: "บันทึกรับซื้อน้ำยาง", 
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => const LatexPurchaseScreen()));
-                    },
-                  ),
+                   index: 4,
+  currentIndex: currentIndex,
+  emoji: "💧", 
+  label: "บันทึกรับซื้อน้ำยาง", 
+  onTap: () {
+    Navigator.pop(context);
+
+    // ดึงเฉพาะตัวเลขราคารับซื้อออกจากสตริง (เช่น "฿55.0" -> 55.0)
+    final cleanPriceText = _todayPrice.replaceAll('฿', '').trim();
+    final double parsedPrice = double.tryParse(cleanPriceText) ?? 0.0;
+    
+    // ดึงวันที่ปัจจุบันในรูปแบบ YYYY-MM-DD สำหรับ priceId
+    final String todayDateStr = DateTime.now().toIso8601String().split('T')[0];
+
+    Navigator.push(
+      context, 
+      MaterialPageRoute(
+        builder: (context) => PurchaseScreen(
+          todayPrice: parsedPrice,
+          priceId: todayDateStr,
+        ),
+      ),
+    );
+  },
+),
                   _buildDrawerItem(
                     index: 5,
                     currentIndex: currentIndex,
-                    emoji: "💰", 
-                    label: "ตั้งราคาประจำวัน", 
-                    onTap: () {
+                    emoji: "💰",
+                    label: "ตั้งราคาประจำวัน",
+                    onTap: () async {
                       Navigator.pop(context);
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => const DailyPriceScreen()));
+                      // เมื่อกลับมาจากหน้าตั้งราคา ให้รีเฟรชราคาใหม่ด้วย
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const DailyPriceScreen(),
+                        ),
+                      );
+                      _fetchTodayPrice();
                     },
                   ),
                 ],
@@ -252,8 +344,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildDrawerItem({
     required int index,
     required int currentIndex,
-    required String emoji, 
-    required String label, 
+    required String emoji,
+    required String label,
     required VoidCallback onTap,
   }) {
     bool isSelected = index == currentIndex;
@@ -313,7 +405,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Center(
                         child: Text(
                           _bannerImages[index],
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
                         ),
                       ),
                     );
@@ -334,7 +430,9 @@ class _HomeScreenState extends State<HomeScreen> {
               width: _currentBannerIndex == index ? 20 : 8,
               height: 8,
               decoration: BoxDecoration(
-                color: _currentBannerIndex == index ? const Color(0xFF2E6D52) : Colors.grey.shade300,
+                color: _currentBannerIndex == index
+                    ? const Color(0xFF2E6D52)
+                    : Colors.grey.shade300,
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
@@ -382,7 +480,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         _buildSmallStatCard(
           title: "ราคารับซื้อวันนี้",
-          value: "฿53",
+          value: _todayPrice, // <-- ใช้ค่า dynamic จากตัวแปร _todayPrice
           icon: Icons.calendar_month_rounded,
           iconBgColor: const Color(0xFFEDE9FE),
           iconColor: const Color(0xFF7C3AED),
@@ -471,7 +569,12 @@ class _HomeScreenState extends State<HomeScreen> {
           emoji: "➕",
           bgColor: const Color(0xFFEDE9FE),
           onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const RegisterFarmerScreen()));
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const RegisterFarmerScreen(),
+              ),
+            );
           },
         ),
         _buildMenuCard(
@@ -479,7 +582,10 @@ class _HomeScreenState extends State<HomeScreen> {
           emoji: "📋",
           bgColor: const Color(0xFFFEF3C7),
           onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const FarmerListScreen()));
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const FarmerListScreen()),
+            );
           },
         ),
         _buildMenuCard(
@@ -487,23 +593,48 @@ class _HomeScreenState extends State<HomeScreen> {
           emoji: "🚗",
           bgColor: const Color(0xFFFEE2E2),
           onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const RegisterVehicleScreen()));
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const RegisterVehicleScreen(),
+              ),
+            );
           },
         ),
         _buildMenuCard(
-          title: "บันทึกรับซื้อน้ำยาง",
-          emoji: "💧",
-          bgColor: const Color(0xFFE0F2FE),
-          onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const LatexPurchaseScreen()));
-          },
+         title: "บันทึกรับซื้อน้ำยาง",
+  emoji: "💧",
+  bgColor: const Color(0xFFE0F2FE),
+  onTap: () {
+    // ดึงเฉพาะตัวเลขราคารับซื้อออกจากสตริง (เช่น "฿55.0" -> 55.0)
+    final cleanPriceText = _todayPrice.replaceAll('฿', '').trim();
+    final double parsedPrice = double.tryParse(cleanPriceText) ?? 0.0;
+    
+    // ดึงวันที่ปัจจุบันในรูปแบบ YYYY-MM-DD สำหรับ priceId
+    final String todayDateStr = DateTime.now().toIso8601String().split('T')[0];
+
+    Navigator.push(
+      context, 
+      MaterialPageRoute(
+        builder: (context) => PurchaseScreen(
+          todayPrice: parsedPrice,
+          priceId: todayDateStr,
         ),
+      ),
+    );
+  },
+),
         _buildMenuCard(
           title: "ตั้งราคาประจำวัน",
           emoji: "💰",
           bgColor: const Color(0xFFFEF9C3),
-          onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const DailyPriceScreen()));
+          onTap: () async {
+            // เมื่อกดเข้าตั้งราคา เมื่อกลับมาหน้านี้จะทำการดึงราคานำมาอัปเดตทันที
+            await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const DailyPriceScreen()),
+            );
+            _fetchTodayPrice();
           },
         ),
       ],
@@ -537,15 +668,9 @@ class _HomeScreenState extends State<HomeScreen> {
             Container(
               width: 50,
               height: 50,
-              decoration: BoxDecoration(
-                color: bgColor,
-                shape: BoxShape.circle,
-              ),
+              decoration: BoxDecoration(color: bgColor, shape: BoxShape.circle),
               child: Center(
-                child: Text(
-                  emoji,
-                  style: const TextStyle(fontSize: 26),
-                ),
+                child: Text(emoji, style: const TextStyle(fontSize: 26)),
               ),
             ),
             const SizedBox(height: 8),
@@ -610,7 +735,6 @@ class _DrawerHoverItemState extends State<_DrawerHoverItem> {
         child: Stack(
           alignment: Alignment.centerLeft,
           children: [
-            // แถบเส้นสีเขียวแนวตั้งชิดขอบซ้ายสุด (ไม่มี Banner มาทับไอคอนแล้ว)
             if (widget.isSelected)
               Container(
                 width: 4,
@@ -625,9 +749,13 @@ class _DrawerHoverItemState extends State<_DrawerHoverItem> {
               title: Text(
                 widget.label,
                 style: TextStyle(
-                  color: widget.isSelected ? Colors.white : (_isHovered ? Colors.white : Colors.white70),
+                  color: widget.isSelected
+                      ? Colors.white
+                      : (_isHovered ? Colors.white : Colors.white70),
                   fontSize: 16,
-                  fontWeight: widget.isSelected ? FontWeight.bold : FontWeight.w500,
+                  fontWeight: widget.isSelected
+                      ? FontWeight.bold
+                      : FontWeight.w500,
                 ),
               ),
               dense: true,
@@ -664,14 +792,20 @@ class _LogoutHoverItemState extends State<_LogoutHoverItem> {
         duration: const Duration(milliseconds: 200),
         margin: const EdgeInsets.symmetric(horizontal: 8),
         decoration: BoxDecoration(
-          color: _isHovered ? Colors.redAccent.withValues(alpha: 0.15) : Colors.transparent,
+          color: _isHovered
+              ? Colors.redAccent.withValues(alpha: 0.15)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
         ),
         child: ListTile(
           leading: const Text("🚪", style: TextStyle(fontSize: 22)),
           title: const Text(
             "ออกจากระบบ",
-            style: TextStyle(color: Colors.redAccent, fontSize: 16, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: Colors.redAccent,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           onTap: widget.onTap,
         ),

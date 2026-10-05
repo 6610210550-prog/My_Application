@@ -133,7 +133,7 @@ class _LoginScreenState extends State<LoginScreen> {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       await prefs.setString("access_token", json["data"]["access_token"]);
       await prefs.setString("username",_usernameValueController.text);
-      await prefs.setString("image_url", json["data"]["image_url"]);
+      
     }
 
     return (
@@ -240,6 +240,7 @@ class _LoginScreenState extends State<LoginScreen> {
     } else {
       var result = await _accessRequest(authenToken);
       print("access_token: ${result.data}");
+print("result.isError = ${result.isError}");
       
       if (result.isError) {
         showDialog(
