@@ -35,6 +35,14 @@ class _RegisterCarDialogState extends State<RegisterCarDialog> {
 
   bool _isLoading = false;
 
+  @override
+  void dispose() {
+    _carNumberController.dispose();
+    _colorController.dispose();
+    _provinceController.dispose();
+    super.dispose();
+  }
+
   Future<void> _submitCarForm() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -46,7 +54,7 @@ class _RegisterCarDialogState extends State<RegisterCarDialog> {
       "farmer_id": widget.farmerId,
       "color": _colorController.text.trim(),
       "province": _provinceController.text.trim(),
-      "cartype_id": _selectedCarTypeId, // 📌 2. ส่งค่าประเภทรถที่เลือกไปที่ API
+      "cartype_id": _selectedCarTypeId,
     };
 
     try {
@@ -61,12 +69,18 @@ class _RegisterCarDialogState extends State<RegisterCarDialog> {
       if (mounted) {
         if (response.statusCode == 200 && resData['isError'] == false) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(resData['data']), backgroundColor: Colors.green),
+            SnackBar(
+              content: Text(resData['data'] ?? 'ลงทะเบียนรถเรียบร้อย'), 
+              backgroundColor: Colors.green
+            ),
           );
-          Navigator.pop(context); // ปิด Dialog
+          Navigator.pop(context, true); // 📌 ส่ง true กลับไปเพื่อให้หน้ารายการรถ Auto Refresh
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(resData['errorMessage']), backgroundColor: Colors.red),
+            SnackBar(
+              content: Text(resData['errorMessage'] ?? 'เกิดข้อผิดพลาดในการบันทึก'), 
+              backgroundColor: Colors.red
+            ),
           );
         }
       }
@@ -98,7 +112,6 @@ class _RegisterCarDialogState extends State<RegisterCarDialog> {
               ),
               const SizedBox(height: 12),
               
-              // 📌 3. เพิ่ม Widget Dropdown ให้ผู้ใช้กดเลือกประเภทรถ
               DropdownButtonFormField<int>(
                 value: _selectedCarTypeId,
                 decoration: const InputDecoration(

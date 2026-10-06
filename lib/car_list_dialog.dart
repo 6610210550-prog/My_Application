@@ -27,6 +27,7 @@ class _CarListDialogState extends State<CarListDialog> {
     _fetchCars();
   }
 
+  // ดึงข้อมูลรายการรถ
   Future<void> _fetchCars() async {
     setState(() => _isLoading = true);
     final url = Uri.parse("http://127.0.0.1:3000/api/car/list/${widget.farmerId}");
@@ -52,12 +53,58 @@ class _CarListDialogState extends State<CarListDialog> {
     }
   }
 
+  // ฟังก์ชันลบข้อมูลรถผ่าน API
+  Future<void> _deleteCar(String carId, String carNumber) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("ยืนยันการลบรถ"),
+        content: Text("คุณต้องการลบรถทะเบียน $carNumber หรือไม่?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("ยกเลิก", style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("ลบข้อมูล", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      final url = Uri.parse("http://127.0.0.1:3000/api/car/delete/$carId");
+      final response = await http.delete(url);
+
+      if (response.statusCode == 200) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('ลบรถทะเบียน $carNumber เรียบร้อย'), backgroundColor: Colors.green),
+          );
+        }
+        _fetchCars(); // ดึงข้อมูลรายการรถใหม่หลังลบสำเร็จ
+      } else {
+        throw Exception('ไม่สามารถลบข้อมูลได้');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('เกิดข้อผิดพลาดในการลบ: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text("รายการรถ - ${widget.farmerName} (${widget.farmerId})"),
       content: SizedBox(
-        width: 600,
+        width: 650,
         child: _isLoading
             ? const SizedBox(height: 150, child: Center(child: CircularProgressIndicator()))
             : _cars.isEmpty
@@ -72,14 +119,25 @@ class _CarListDialogState extends State<CarListDialog> {
                         DataColumn(label: Text('ประเภทรถ', style: TextStyle(fontWeight: FontWeight.bold))),
                         DataColumn(label: Text('จังหวัด', style: TextStyle(fontWeight: FontWeight.bold))),
                         DataColumn(label: Text('สี', style: TextStyle(fontWeight: FontWeight.bold))),
+                        DataColumn(label: Text('จัดการ', style: TextStyle(fontWeight: FontWeight.bold))),
                       ],
                       rows: _cars.map<DataRow>((car) {
                         final carData = car as Map<String, dynamic>;
+                        final carId = carData['car_id']?.toString() ?? carData['id']?.toString() ?? '';
+                        final carNumber = carData['car_number']?.toString() ?? '-';
+
                         return DataRow(cells: [
-                          DataCell(Text(carData['car_number']?.toString() ?? '-')),
+                          DataCell(Text(carNumber)),
                           DataCell(Text(carData['cartype_name']?.toString() ?? '-')),
                           DataCell(Text(carData['province']?.toString() ?? '-')),
                           DataCell(Text(carData['color']?.toString() ?? '-')),
+                          DataCell(
+                            IconButton(
+                              icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                              onPressed: () => _deleteCar(carId, carNumber),
+                              tooltip: 'ลบรถ',
+                            ),
+                          ),
                         ]);
                       }).toList(),
                     ),
