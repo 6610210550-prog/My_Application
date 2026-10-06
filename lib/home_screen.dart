@@ -9,8 +9,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http; // <-- เพิ่มการนำเข้า http
 import 'dart:convert'; // <-- เพิ่มการนำเข้า json convert
 import 'views/purchase_screen.dart';
-import 'farmer_list_screen.dart';
-
+import 'views/quality_test_screen.dart';
+import 'views/test_list_screen.dart';
+import 'views/purchase_list_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -331,6 +332,51 @@ class _HomeScreenState extends State<HomeScreen> {
                       _fetchTodayPrice();
                     },
                   ),
+                  _buildDrawerItem(
+                    index: 6,
+                    currentIndex: currentIndex,
+                    emoji: "🧪",
+                    label: "ตรวจคุณภาพน้ำยาง",
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const QualityTestScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildDrawerItem(
+                    index: 7,
+                    currentIndex: currentIndex,
+                    emoji: "📊",
+                    label: "รายการผลการตรวจ",
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const TestListScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildDrawerItem(
+                    index: 8,
+                    currentIndex: currentIndex,
+                    emoji: "📝",
+                    label: "รายการรับซื้อน้ำยาง",
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const PurchaseListScreen(),
+                        ),
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
@@ -637,6 +683,40 @@ class _HomeScreenState extends State<HomeScreen> {
               MaterialPageRoute(builder: (context) => const DailyPriceScreen()),
             );
             _fetchTodayPrice();
+          },
+        ),
+
+       _buildMenuCard(
+          title: "ตรวจคุณภาพน้ำยาง",
+          emoji: "🧪",
+          bgColor: const Color(0xFFE0FDF4),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const QualityTestScreen()),
+            );
+          },
+        ),
+        _buildMenuCard(
+          title: "รายการผลการตรวจ",
+          emoji: "📊",
+          bgColor: const Color(0xFFF0F9FF),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const TestListScreen()),
+            );
+          },
+        ),
+        _buildMenuCard(
+          title: "รายการรับซื้อน้ำยาง",
+          emoji: "📝",
+          bgColor: const Color(0xFFF1F5F9),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const PurchaseListScreen()),
+            );
           },
         ),
       ],
