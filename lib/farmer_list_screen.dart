@@ -65,7 +65,7 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
     }
   }
 
-  // ✏️️ แก้ไขข้อมูลเกษตรกรผ่าน API
+  // ✏ แก้ไขข้อมูลเกษตรกร
   Future<void> _updateFarmer(String farmerId, Map<String, dynamic> updateData) async {
     final url = Uri.parse("$baseUrl/api/farmers/$farmerId");
 
@@ -77,23 +77,17 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
       );
 
       if (response.statusCode == 200) {
-        if (mounted) {
-          _showSnackBar('แก้ไขข้อมูลเกษตรกรสำเร็จ', Colors.green);
-        }
+        if (mounted) _showSnackBar('แก้ไขข้อมูลสำเร็จ', const Color(0xFF0D9488));
         _fetchFarmers();
       } else {
-        if (mounted) {
-          _showSnackBar('แก้ไขไม่สำเร็จ (Status: ${response.statusCode})', Colors.red);
-        }
+        if (mounted) _showSnackBar('แก้ไขไม่สำเร็จ (Status: ${response.statusCode})', Colors.redAccent);
       }
     } catch (e) {
-      if (mounted) {
-        _showSnackBar('เกิดข้อผิดพลาด: $e', Colors.red);
-      }
+      if (mounted) _showSnackBar('เกิดข้อผิดพลาด: $e', Colors.redAccent);
     }
   }
 
-  // 🗑️ ลบข้อมูลเกษตรกรผ่าน API
+  // 🗑️ ลบข้อมูลเกษตรกร
   Future<void> _deleteFarmer(String farmerId) async {
     final url = Uri.parse("$baseUrl/api/farmers/$farmerId");
 
@@ -101,25 +95,25 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
       final response = await http.delete(url);
 
       if (response.statusCode == 200) {
-        if (mounted) {
-          _showSnackBar('ลบข้อมูลเกษตรกรเรียบร้อยแล้ว', Colors.green);
-        }
-        _fetchFarmers(); // 🔄 โหลดข้อมูลใหม่ทันที
+        if (mounted) _showSnackBar('ลบข้อมูลเรียบร้อยแล้ว', const Color(0xFF0D9488));
+        _fetchFarmers();
       } else {
-        if (mounted) {
-          _showSnackBar('ลบไม่สำเร็จ (Status: ${response.statusCode})', Colors.red);
-        }
+        if (mounted) _showSnackBar('ลบไม่สำเร็จ (Status: ${response.statusCode})', Colors.redAccent);
       }
     } catch (e) {
-      if (mounted) {
-        _showSnackBar('เกิดข้อผิดพลาดในการลบ: $e', Colors.red);
-      }
+      if (mounted) _showSnackBar('เกิดข้อผิดพลาดในการลบ: $e', Colors.redAccent);
     }
   }
 
   void _showSnackBar(String message, Color backgroundColor) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: backgroundColor),
+      SnackBar(
+        content: Text(message, style: const TextStyle(fontWeight: FontWeight.w600)),
+        backgroundColor: backgroundColor,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
     );
   }
 
@@ -136,7 +130,6 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
     }
   }
 
-  // ⚠️ Pop-up ยืนยันก่อนลบ
   void _confirmDeleteFarmer(Map<String, dynamic> farmer) {
     final farmerId = _getVal(farmer, ['farmer_id', 'Farmer_id', 'id']);
     final farmerName = _getVal(farmer, ['farmer_name', 'Farmer_name', 'name']);
@@ -145,19 +138,13 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Row(
-            children: [
-              Icon(Icons.warning_amber_rounded, color: Colors.redAccent, size: 26),
-              SizedBox(width: 8),
-              Text('ยืนยันการลบข้อมูล', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            ],
-          ),
-          content: Text('คุณต้องการลบข้อมูลเกษตรกร "$farmerName" (ID: $farmerId) ใช่หรือไม่?'),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('ยืนยันการลบข้อมูล', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          content: Text('คุณต้องการลบข้อมูลเกษตรกร "$farmerName" (ID : $farmerId) ใช่หรือไม่ ?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('ยกเลิก', style: TextStyle(color: Colors.grey)),
+              child: const Text('ยกเลิก', style: TextStyle(color: Color(0xFF64748B))),
             ),
             ElevatedButton(
               onPressed: () {
@@ -167,6 +154,7 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFEF4444),
                 foregroundColor: Colors.white,
+                elevation: 0,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
               child: const Text('ลบข้อมูล'),
@@ -218,46 +206,29 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
 
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true,
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
         return SafeArea(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFCBD5E1),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
                 Text(
-                  "จัดการรถ: $farmerName",
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  "จัดการรถ : $farmerName",
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
                 ),
                 const SizedBox(height: 16),
                 ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  tileColor: const Color(0xFFF1F5F9),
-                  leading: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(color: const Color(0x1A0284C7), borderRadius: BorderRadius.circular(10)),
-                    child: const Icon(Icons.directions_car_rounded, color: Color(0xFF0284C7)),
+                  leading: const CircleAvatar(
+                    backgroundColor: Color(0xFFE0F2FE),
+                    child: Icon(Icons.directions_car_rounded, color: Color(0xFF0284C7)),
                   ),
-                  title: const Text("ดูรายการรถ", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                  subtitle: const Text("รายการยานพาหนะที่ลงทะเบียนไว้", style: TextStyle(fontSize: 12)),
-                  trailing: const Icon(Icons.chevron_right_rounded, color: Color(0xFF64748B)),
+                  title: const Text('ดูรายการรถทั้งหมด', style: TextStyle(fontWeight: FontWeight.w600)),
                   onTap: () {
                     Navigator.pop(context);
                     showDialog(
@@ -269,19 +240,12 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
                     );
                   },
                 ),
-                const SizedBox(height: 10),
                 ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  tileColor: const Color(0xFFF1F5F9),
-                  leading: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(color: const Color(0x1A10B981), borderRadius: BorderRadius.circular(10)),
-                    child: const Icon(Icons.add_circle_outline_rounded, color: Color(0xFF10B981)),
+                  leading: const CircleAvatar(
+                    backgroundColor: Color(0xFFD1FAE5),
+                    child: Icon(Icons.add_rounded, color: Color(0xFF059669)),
                   ),
-                  title: const Text("ลงทะเบียนรถใหม่", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                  subtitle: const Text("เพิ่มรถคันใหม่เข้าสู่ระบบ", style: TextStyle(fontSize: 12)),
-                  trailing: const Icon(Icons.chevron_right_rounded, color: Color(0xFF64748B)),
+                  title: const Text('ลงทะเบียนรถคันใหม่', style: TextStyle(fontWeight: FontWeight.w600)),
                   onTap: () async {
                     Navigator.pop(context);
                     await showDialog(
@@ -310,142 +274,125 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: const Color(0xFF1E2837),
         elevation: 0,
+        centerTitle: false,
+        titleSpacing: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.maybePop(context),
         ),
         title: const Text(
           'รายชื่อเกษตรกร',
-          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         actions: [
-          Center(
-            child: Container(
-              margin: const EdgeInsets.only(right: 16),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white.withOpacity(0.2)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.people_alt_rounded, color: Colors.white, size: 15),
-                  const SizedBox(width: 6),
-                  Text(
-                    "${list.length} ราย",
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12.5),
-                  ),
-                ],
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.person, color: Colors.white, size: 16),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${list.length} ราย',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // 🔍 ช่องค้นหา
-          Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1100),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x08000000),
-                        blurRadius: 10,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            // 🔍 ช่องค้นหา
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x0A000000),
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
                   ),
-                  child: TextField(
-                    controller: _searchController,
-                    onChanged: (val) => setState(() => _searchQuery = val),
-                    decoration: InputDecoration(
-                      hintText: "ค้นหาด้วยชื่อ หรือรหัสเกษตรกร...",
-                      hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
-                      prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF64748B)),
-                      suffixIcon: _searchQuery.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(Icons.clear_rounded, size: 18, color: Color(0xFF64748B)),
-                              onPressed: () {
-                                _searchController.clear();
-                                setState(() => _searchQuery = '');
-                              },
-                            )
-                          : null,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                      filled: true,
-                      fillColor: Colors.white,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                  ),
+                ],
+              ),
+              child: TextField(
+                controller: _searchController,
+                onChanged: (val) => setState(() => _searchQuery = val),
+                style: const TextStyle(fontSize: 16, color: Color(0xFF1E293B)),
+                decoration: InputDecoration(
+                  hintText: "ค้นหาด้วยชื่อหรือรหัสเกษตรกร",
+                  hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 15),
+                  prefixIcon: const Icon(Icons.search, color: Color(0xFF94A3B8)),
+                  suffixIcon: _searchQuery.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, size: 18, color: Color(0xFF94A3B8)),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() => _searchQuery = '');
+                          },
+                        )
+                      : null,
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
                 ),
               ),
             ),
-          ),
+            const SizedBox(height: 20),
 
-          // 📜 รายการการ์ดเกษตรกร
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator(color: Color(0xFF1E293B)))
-                : RefreshIndicator(
-                    onRefresh: _fetchFarmers,
-                    color: const Color(0xFF1E293B),
-                    child: list.isEmpty
-                        ? ListView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            children: const [
-                              SizedBox(height: 100),
-                              Center(
-                                child: Column(
-                                  children: [
-                                    Icon(Icons.search_off_rounded, size: 64, color: Color(0xFF94A3B8)),
-                                    SizedBox(height: 12),
-                                    Text(
-                                      "ไม่พบข้อมูลเกษตรกรที่ค้นหา",
-                                      style: TextStyle(fontSize: 15, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          )
-                        : Center(
-                            child: ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 1100),
-                              child: isDesktop
-                                  ? GridView.builder(
-                                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                        crossAxisCount: 2,
-                                        mainAxisExtent: 250,
-                                        crossAxisSpacing: 16,
-                                        mainAxisSpacing: 16,
-                                      ),
-                                      itemCount: list.length,
-                                      itemBuilder: (context, index) => _buildFarmerCard(list[index]),
-                                    )
-                                  : ListView.builder(
-                                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                                      itemCount: list.length,
-                                      itemBuilder: (context, index) => Padding(
-                                        padding: const EdgeInsets.only(bottom: 12),
-                                        child: _buildFarmerCard(list[index]),
-                                      ),
-                                    ),
-                            ),
+            // 📜 แสดงรายการข้อมูลเกษตรกร
+            _isLoading
+                ? const Padding(
+                    padding: EdgeInsets.only(top: 80),
+                    child: Center(child: CircularProgressIndicator(color: Color(0xFF0F766E))),
+                  )
+                : list.isEmpty
+                    ? const Padding(
+                        padding: EdgeInsets.only(top: 60),
+                        child: Center(
+                          child: Text(
+                            "ไม่พบข้อมูลเกษตรกร",
+                            style: TextStyle(fontSize: 16, color: Color(0xFF64748B)),
                           ),
-                  ),
-          ),
-        ],
+                        ),
+                      )
+                    : GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: isDesktop ? 2 : 1,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
+                          mainAxisExtent: 280,
+                        ),
+                        itemCount: list.length,
+                        itemBuilder: (context, index) {
+                          return _buildFarmerCard(list[index]);
+                        },
+                      ),
+          ],
+        ),
       ),
     );
   }
@@ -465,172 +412,226 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x0D0F172A),
+            color: Color(0x06000000),
             blurRadius: 10,
-            offset: Offset(0, 2),
+            offset: Offset(0, 4),
           ),
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor: const Color(0xFFE2E8F0),
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFE2E8F0),
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
                   child: Text(
                     farmerName.isNotEmpty && farmerName != '-' ? farmerName[0] : 'ก',
-                    style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B), fontSize: 16),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF334155),
+                      fontSize: 20,
+                    ),
                   ),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        farmerName,
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      farmerName,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E293B),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(Icons.phone_android, size: 18, color: Color(0xFF64748B)),
+                        const SizedBox(width: 4),
+                        Text(
+                          phone,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            color: Color(0xFF64748B),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              
+              // 🏷️ ป้าย ID สไตล์ Soft Teal (ละมุน เข้ากับโทนสีหลักของแอป ไม่แย่งสายตา)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFCCFBF1), // เขียวมิ้นต์พาสเทล
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFF99F6E4)), // เส้นขอบนุ่มๆ
+                ),
+                child: Text(
+                  "ID : $farmerId",
+                  style: const TextStyle(
+                    color: Color(0xFF0F766E), // ตัวอักษรเขียวเข้มอ่านชัดเจน
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13.5,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          
+          // 📌 ส่วนกล่องข้อมูลที่อยู่และธนาคาร
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFFF1F5F9)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 1. ที่อยู่
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.location_on_outlined, size: 19, color: Color(0xFF0F766E)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        "ที่อยู่ : $formattedAddress",
+                        style: const TextStyle(
+                          fontSize: 15.5,
+                          color: Color(0xFF334155),
+                          height: 1.3,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 2),
-                      Row(
-                        children: [
-                          const Icon(Icons.phone_android_rounded, size: 13, color: Color(0xFF64748B)),
-                          const SizedBox(width: 4),
-                          Text(phone, style: const TextStyle(fontSize: 12.5, color: Color(0xFF64748B))),
-                        ],
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    "ID: $farmerId",
-                    style: const TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.bold, fontSize: 11),
-                  ),
+                const SizedBox(height: 6),
+                // 2. ธนาคาร
+                Row(
+                  children: [
+                    const Icon(Icons.account_balance_outlined, size: 19, color: Color(0xFF0F766E)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        "ธนาคาร : $bankType",
+                        style: const TextStyle(
+                          fontSize: 15.5,
+                          color: Color(0xFF334155),
+                          height: 1.3,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                // 3. เลขบัญชี
+                Row(
+                  children: [
+                    const Icon(Icons.credit_card_outlined, size: 19, color: Color(0xFF0F766E)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        "เลขบัญชี : $bankNum",
+                        style: const TextStyle(
+                          fontSize: 15.5,
+                          color: Color(0xFF334155),
+                          height: 1.3,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(Icons.location_on_outlined, size: 15, color: Color(0xFF0F766E)),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          "ที่อยู่ : $formattedAddress",
-                          style: const TextStyle(fontSize: 12, color: Color(0xFF334155), height: 1.25),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 4),
-                    child: Divider(height: 1, color: Color(0xFFE2E8F0)),
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Padding(
-                        padding: EdgeInsets.only(top: 2),
-                        child: Icon(Icons.account_balance_outlined, size: 15, color: Color(0xFF0284C7)),
-                      ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "ธนาคาร : $bankType",
-                              style: const TextStyle(fontSize: 12, color: Color(0xFF334155)),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              "เลขบัญชี : $bankNum",
-                              style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            Row(
-              children: [
-                Expanded(
+          ),
+          const Spacer(),
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 44,
                   child: ElevatedButton.icon(
                     onPressed: () => _openCarOptions(farmer),
-                    icon: const Icon(Icons.directions_car_filled_rounded, size: 15),
-                    label: const Text("จัดการรถ", style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
+                    icon: const Icon(Icons.directions_car_filled, size: 20),
+                    label: const Text(
+                      "จัดการรถ",
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF0F766E),
                       foregroundColor: Colors.white,
                       elevation: 0,
-                      padding: const EdgeInsets.symmetric(vertical: 10),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                InkWell(
-                  onTap: () => _showEditFarmerDialog(farmer),
-                  borderRadius: BorderRadius.circular(8),
-                  child: Container(
-                    padding: const EdgeInsets.all(9),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFEF3C7),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(Icons.edit_rounded, size: 17, color: Color(0xFFD97706)),
+              ),
+              const SizedBox(width: 8),
+              InkWell(
+                onTap: () => _showEditFarmerDialog(farmer),
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF3C7),
+                    borderRadius: BorderRadius.circular(8),
                   ),
+                  child: const Icon(Icons.edit_outlined, size: 22, color: Color(0xFFD97706)),
                 ),
-                const SizedBox(width: 6),
-                InkWell(
-                  onTap: () => _confirmDeleteFarmer(farmer),
-                  borderRadius: BorderRadius.circular(8),
-                  child: Container(
-                    padding: const EdgeInsets.all(9),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFEE2E2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(Icons.delete_outline_rounded, size: 17, color: Color(0xFFDC2626)),
+              ),
+              const SizedBox(width: 8),
+              InkWell(
+                onTap: () => _confirmDeleteFarmer(farmer),
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEE2E2),
+                    borderRadius: BorderRadius.circular(8),
                   ),
+                  child: const Icon(Icons.delete_outline, size: 22, color: Color(0xFFEF4444)),
                 ),
-              ],
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 }
 
-// 📌 Mobile / Desktop Dialog แก้ไขข้อมูลเกษตรกร
+// 📌 Dialog แก้ไขข้อมูลเกษตรกร (ปรับดีไซน์ให้แมตช์ธีมหลัก)
 class EditFarmerDialog extends StatefulWidget {
   final Map<String, dynamic> farmer;
   final String farmerId;
@@ -708,98 +709,206 @@ class _EditFarmerDialogState extends State<EditFarmerDialog> {
     return '';
   }
 
+  InputDecoration _buildInputDecoration(String label, IconData icon) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: const TextStyle(color: Color(0xFF475569), fontSize: 14, fontWeight: FontWeight.w500),
+      prefixIcon: Icon(icon, size: 20, color: const Color(0xFF0F766E)),
+      filled: true,
+      fillColor: const Color(0xFFF8FAFC),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFF0F766E), width: 1.8),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      elevation: 10,
+      backgroundColor: Colors.white,
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 500),
-        padding: const EdgeInsets.all(20.0),
+        constraints: const BoxConstraints(maxWidth: 460),
+        padding: const EdgeInsets.all(24.0),
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // 📌 Header Bar พร้อม Badge แสดงรหัสเกษตรกร
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('แก้ไขข้อมูลเกษตรกร', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE6F4F1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.edit_note_rounded,
+                      color: Color(0xFF0F766E),
+                      size: 26,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'แก้ไขข้อมูลเกษตรกร',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1E293B),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFCCFBF1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFF99F6E4)),
+                          ),
+                          child: Text(
+                            'ID : ${widget.farmerId}',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Color(0xFF0F766E),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                   IconButton(
-                    icon: const Icon(Icons.close_rounded),
+                    icon: const Icon(Icons.close_rounded, color: Color(0xFF94A3B8)),
                     onPressed: () => Navigator.pop(context),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+
+              const SizedBox(height: 20),
+              const Divider(height: 1, color: Color(0xFFF1F5F9)),
+              const SizedBox(height: 20),
+
+              // 1. ชื่อ-นามสกุล
               TextField(
                 controller: _nameCtrl,
-                decoration: InputDecoration(
-                  labelText: 'ชื่อ - นามสกุล',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                ),
+                decoration: _buildInputDecoration('ชื่อ - นามสกุล', Icons.person_outline),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
+
+              // 2. เบอร์โทรศัพท์
               TextField(
                 controller: _phoneCtrl,
                 keyboardType: TextInputType.phone,
-                decoration: InputDecoration(
-                  labelText: 'เบอร์โทรศัพท์',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                ),
+                decoration: _buildInputDecoration('เบอร์โทรศัพท์', Icons.phone_android),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
+
+              // 3. ที่อยู่
               TextField(
                 controller: _addressCtrl,
                 maxLines: 2,
-                decoration: InputDecoration(
-                  labelText: 'ที่อยู่',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                ),
+                decoration: _buildInputDecoration('ที่อยู่', Icons.location_on_outlined),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
+
+              // 4. ธนาคาร
               DropdownButtonFormField<String>(
                 value: _selectedBank,
-                decoration: InputDecoration(
-                  labelText: 'ธนาคาร',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                items: _bankOptions.map((b) => DropdownMenuItem(value: b, child: Text(b))).toList(),
+                decoration: _buildInputDecoration('ธนาคาร', Icons.account_balance_outlined),
+                dropdownColor: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF64748B)),
+                items: _bankOptions.map((b) => DropdownMenuItem(value: b, child: Text(b, style: const TextStyle(fontSize: 14, color: Color(0xFF1E293B))))).toList(),
                 onChanged: (val) {
                   if (val != null) setState(() => _selectedBank = val);
                 },
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
+
+              // 5. เลขบัญชีธนาคาร
               TextField(
                 controller: _bankNumCtrl,
                 keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: 'เลขบัญชีธนาคาร',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                ),
+                decoration: _buildInputDecoration('เลขบัญชีธนาคาร', Icons.credit_card),
               ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: () {
-                    final updateData = {
-                      "farmer_name": _nameCtrl.text.trim(),
-                      "phone": _phoneCtrl.text.trim(),
-                      "address": _addressCtrl.text.trim(),
-                      "bank_type": _selectedBank,
-                      "bank_number": _bankNumCtrl.text.trim(),
-                    };
-                    Navigator.pop(context, updateData);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E293B),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+
+              const SizedBox(height: 28),
+
+              // 📌 ปุ่มจัดการ (ยกเลิก / บันทึกการเปลี่ยนแปลง)
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        side: const BorderSide(color: Color(0xFFCBD5E1)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'ยกเลิก',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
+                    ),
                   ),
-                  child: const Text('บันทึกการเปลี่ยนแปลง', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-                ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        final updateData = {
+                          "farmer_name": _nameCtrl.text.trim(),
+                          "phone": _phoneCtrl.text.trim(),
+                          "address": _addressCtrl.text.trim(),
+                          "bank_type": _selectedBank,
+                          "bank_number": _bankNumCtrl.text.trim(),
+                        };
+                        Navigator.pop(context, updateData);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0F766E),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'บันทึกการเปลี่ยนแปลง',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
