@@ -682,7 +682,7 @@ class _EditFarmerDialogState extends State<EditFarmerDialog> {
     _addressCtrl = TextEditingController(text: existingAddress);
     _bankNumCtrl = TextEditingController(text: _getVal(f, ['bank_number', 'Bank_number', 'bank_num']));
 
-    _bankOptions = ['กรุงไทย', 'ธ.ก.ส.', 'กสิกรไทย', 'ไทยพาณิชย์', 'กรุงเทพ'];
+    _bankOptions = ['กรุงไทย',  'กสิกรไทย', 'ไทยพาณิชย์', 'กรุงเทพ'];
     final currentBank = _getVal(f, ['bank_type', 'Bank_type', 'bank_name']);
 
     if (currentBank.isNotEmpty && !_bankOptions.contains(currentBank)) {

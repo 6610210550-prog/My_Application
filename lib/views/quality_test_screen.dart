@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/test_model.dart';
 import '../services/test_service.dart';
-import '../utils/result.dart'; // 📌 1. Import Result เพื่อใช้งาน Sealed Class Pattern
+import '../utils/result.dart';
 
 class QualityTestScreen extends StatefulWidget {
   const QualityTestScreen({super.key});
@@ -42,7 +42,6 @@ class _QualityTestScreenState extends State<QualityTestScreen> {
     super.dispose();
   }
 
-  // 📌 1. ดึงรายการรอตรวจ
   Future<void> _fetchPendingPurchases() async {
     setState(() => _isFetching = true);
 
@@ -52,15 +51,13 @@ class _QualityTestScreenState extends State<QualityTestScreen> {
       if (mounted) {
         setState(() {
           _isFetching = false;
-          
-          // ใช้ Pattern Matching ถอดค่าจาก Result<T> อย่างปลอดภัย
           switch (result) {
             case Ok(:final value):
               _pendingList = value;
             case Error(:final error):
               _showSnackBar(
-                error.toString().replaceAll('Exception: ', ''), 
-                Colors.red
+                error.toString().replaceAll('Exception: ', ''),
+                Colors.redAccent,
               );
           }
         });
@@ -68,15 +65,14 @@ class _QualityTestScreenState extends State<QualityTestScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isFetching = false);
-        _showSnackBar('เกิดข้อผิดพลาดในการดึงข้อมูล: $e', Colors.red);
+        _showSnackBar('เกิดข้อผิดพลาดในการดึงข้อมูล: $e', Colors.redAccent);
       }
     }
   }
 
-  // 📌 2. บันทึกผลตรวจ
   Future<void> _saveTestResult() async {
     if (_selectedPurchase == null) {
-      _showSnackBar('กรุณาเลือกรายการรับซื้อก่อน', Colors.orange);
+      _showSnackBar('กรุณาเลือกรายการรับซื้อก่อน', Colors.orange.shade800);
       return;
     }
 
@@ -102,20 +98,20 @@ class _QualityTestScreenState extends State<QualityTestScreen> {
 
         switch (result) {
           case Ok():
-            _showSnackBar('บันทึกผลการตรวจคุณภาพเรียบร้อยแล้ว', Colors.green);
+            _showSnackBar('บันทึกผลการตรวจคุณภาพเรียบร้อยแล้ว', const Color(0xFF0D9488));
             _resetForm();
             _fetchPendingPurchases();
           case Error(:final error):
             _showSnackBar(
-              error.toString().replaceAll('Exception: ', ''), 
-              Colors.red
+              error.toString().replaceAll('Exception: ', ''),
+              Colors.redAccent,
             );
         }
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isSaving = false);
-        _showSnackBar('เกิดข้อผิดพลาดในการบันทึก: $e', Colors.red);
+        _showSnackBar('เกิดข้อผิดพลาดในการบันทึก: $e', Colors.redAccent);
       }
     }
   }
@@ -135,22 +131,55 @@ class _QualityTestScreenState extends State<QualityTestScreen> {
   void _showSnackBar(String message, Color color) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
+        content: Row(
+          children: [
+            const Icon(Icons.info_outline, color: Colors.white),
+            const SizedBox(width: 10),
+            Expanded(child: Text(message, style: const TextStyle(fontWeight: FontWeight.w500))),
+          ],
+        ),
         backgroundColor: color,
         behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.all(12),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
+      backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
-        title: const Text('บันทึกการตรวจคุณภาพน้ำยาง'),
+        title: const Text(
+          'บันทึกการตรวจคุณภาพน้ำยาง',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
         centerTitle: true,
+        elevation: 0,
+        backgroundColor: const Color.fromARGB(255, 30, 40, 55), // Teal Theme
+        foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _fetchPendingPurchases,
+            tooltip: 'รีเฟรชข้อมูล',
+          ),
+        ],
       ),
       body: _isFetching
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(color: Color(0xFF0F766E)),
+                  SizedBox(height: 16),
+                  Text('กำลังโหลดรายการน้ำยาง...', style: TextStyle(color: Colors.grey)),
+                ],
+              ),
+            )
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Form(
@@ -158,133 +187,172 @@ class _QualityTestScreenState extends State<QualityTestScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 📌 1. Dropdown เลือกรายการรับซื้อ
-                    const Text(
-                      'เลือกรายการรับซื้อที่ต้องการตรวจ',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    // 📌 Section 1: เลือกรายการรับซื้อ
+                    _buildSectionHeader(
+                      icon: Icons.assignment_outlined,
+                      title: 'รายการรับซื้อที่รอตรวจ',
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
 
-                    _pendingList.isEmpty
-                        ? Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.amber.shade50,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.amber.shade200),
-                            ),
-                            child: const Text(
-                              'ไม่มีรายการน้ำยางที่รอตรวจคุณภาพ',
-                              style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold),
-                              textAlign: TextAlign.center,
-                            ),
-                          )
-                        : DropdownButtonFormField<PendingPurchase>(
-                            initialValue: _selectedPurchase,
-                            isExpanded: true,
-                            decoration: InputDecoration(
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                              filled: true,
-                              fillColor: Colors.grey.shade50,
-                            ),
-                            hint: const Text('---- เลือกรายการรับซื้อ ----'),
-                            items: _pendingList.map((purchase) {
-                              return DropdownMenuItem<PendingPurchase>(
-                                value: purchase,
-                                child: Text(
-                                  'ID: ${purchase.purchaseId} - ${purchase.farmerName} (${purchase.rubberWeight} กก.)',
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              );
-                            }).toList(),
-                            onChanged: (val) {
-                              setState(() {
-                                _selectedPurchase = val;
-                                if (val != null) {
-                                  _drcController.text = val.purchaseDrc?.toString() ?? '';
-                                }
-                              });
-                            },
-                          ),
-                    const SizedBox(height: 20),
-
-                    // 📌 2. ฟอร์มกรอกค่าทางเคมี
-                    if (_selectedPurchase != null) ...[
+                    if (_pendingList.isEmpty)
+                      _buildEmptyState()
+                    else
                       Card(
-                        elevation: 0,
-                        color: Colors.blue.shade50,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 1,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                         child: Padding(
-                          padding: const EdgeInsets.all(12.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('รหัสรับซื้อ: ${_selectedPurchase!.purchaseId}',
-                                  style: const TextStyle(fontWeight: FontWeight.bold)),
-                              Text('ชื่อเกษตรกร: ${_selectedPurchase!.farmerName}'),
-                              Text('น้ำหนักยาง: ${_selectedPurchase!.rubberWeight} กก.'),
-                            ],
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButtonFormField<PendingPurchase>(
+                              value: _selectedPurchase,
+                              isExpanded: true,
+                              decoration: const InputDecoration(
+                                border: InputBorder.none,
+                                icon: Icon(Icons.water_drop, color: Color(0xFF0F766E)),
+                              ),
+                              hint: const Text('---- เลือกรายการรับซื้อ ----'),
+                              items: _pendingList.map((purchase) {
+                                return DropdownMenuItem<PendingPurchase>(
+                                  value: purchase,
+                                  child: Text(
+                                    '#${purchase.purchaseId} - ${purchase.farmerName} (${purchase.rubberWeight} กก.)',
+                                    style: const TextStyle(fontWeight: FontWeight.w600),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: (val) {
+                                setState(() {
+                                  _selectedPurchase = val;
+                                  if (val != null) {
+                                    _drcController.text = val.purchaseDrc?.toString() ?? '';
+                                  }
+                                });
+                              },
+                            ),
                           ),
                         ),
                       ),
+
+                    const SizedBox(height: 20),
+
+                    // 📌 Section 2: รายละเอียดและฟอร์มตรวจเคมี
+                    if (_selectedPurchase != null) ...[
+                      // การ์ดแสดงรายละเอียดเกษตรกรที่เลือก
+                      _buildFarmerInfoCard(_selectedPurchase!),
+
+                      const SizedBox(height: 20),
+
+                      _buildSectionHeader(
+                        icon: Icons.science_outlined,
+                        title: 'กรอกค่าผลตรวจทางเคมี',
+                      ),
+                      const SizedBox(height: 12),
+
+                      _buildNumberField(
+                        label: 'ค่าแอมโมเนีย (Ammonia)',
+                        controller: _ammoniaController,
+                        unit: '%',
+                        icon: Icons.biotech,
+                      ),
+                      _buildNumberField(
+                        label: 'ค่า VFA',
+                        controller: _vfaController,
+                        unit: 'vfa',
+                        icon: Icons.pie_chart_outline,
+                      ),
+                      _buildNumberField(
+                        label: 'ค่าแมกนีเซียม (Magnesium)',
+                        controller: _magnesiumController,
+                        unit: 'ppm',
+                        icon: Icons.device_thermostat,
+                      ),
+                      _buildNumberField(
+                        label: 'ค่า DRC (%)',
+                        controller: _drcController,
+                        unit: '%',
+                        icon: Icons.percent,
+                      ),
+
                       const SizedBox(height: 16),
 
-                      _buildNumberField('ค่าแอมโมเนีย (Ammonia)', _ammoniaController),
-                      _buildNumberField('ค่า VFA', _vfaController),
-                      _buildNumberField('ค่าแมกนีเซียม (Magnesium)', _magnesiumController),
-                      _buildNumberField('ค่า DRC (%)', _drcController),
+                      // 📌 Section 3: สรุปผลและอนุมัติ
+                      _buildSectionHeader(
+                        icon: Icons.fact_check_outlined,
+                        title: 'สรุปผลการประเมิน',
+                      ),
+                      const SizedBox(height: 12),
 
-                      const SizedBox(height: 16),
-
-                      // 📌 3. สถานะผลการตรวจ
                       Row(
                         children: [
                           Expanded(
-                            child: DropdownButtonFormField<String>(
-                              initialValue: _resultStatus,
-                              decoration: const InputDecoration(labelText: 'ผลการตรวจ (Status)'),
-                              items: const [
-                                DropdownMenuItem(value: 'PASS', child: Text('ผ่าน (PASS)')),
-                                DropdownMenuItem(value: 'FAIL', child: Text('ไม่ผ่าน (FAIL)')),
-                              ],
-                              onChanged: (val) => setState(() => _resultStatus = val!),
+                            child: _buildDropdownContainer(
+                              label: 'ผลการตรวจ',
+                              child: DropdownButton<String>(
+                                value: _resultStatus,
+                                isExpanded: true,
+                                underline: const SizedBox(),
+                                items: const [
+                                  DropdownMenuItem(
+                                    value: 'PASS',
+                                    child: Text('✅ ผ่าน (PASS)', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'FAIL',
+                                    child: Text('❌ ไม่ผ่าน (FAIL)', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                                  ),
+                                ],
+                                onChanged: (val) => setState(() => _resultStatus = val!),
+                              ),
                             ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: DropdownButtonFormField<String>(
-                              initialValue: _resultApprove,
-                              decoration: const InputDecoration(labelText: 'การอนุมัติ (Approve)'),
-                              items: const [
-                                DropdownMenuItem(value: 'PENDING', child: Text('รออนุมัติ')),
-                                DropdownMenuItem(value: 'APPROVED', child: Text('อนุมัติแล้ว')),
-                                DropdownMenuItem(value: 'REJECTED', child: Text('ปฏิเสธ')),
-                              ],
-                              onChanged: (val) => setState(() => _resultApprove = val!),
+                            child: _buildDropdownContainer(
+                              label: 'การอนุมัติ',
+                              child: DropdownButton<String>(
+                                value: _resultApprove,
+                                isExpanded: true,
+                                underline: const SizedBox(),
+                                items: const [
+                                  DropdownMenuItem(value: 'PENDING', child: Text('⏳ รออนุมัติ')),
+                                  DropdownMenuItem(value: 'APPROVED', child: Text('🟢 อนุมัติแล้ว')),
+                                  DropdownMenuItem(value: 'REJECTED', child: Text('🔴 ปฏิเสธ')),
+                                ],
+                                onChanged: (val) => setState(() => _resultApprove = val!),
+                              ),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 24),
 
-                      // 📌 4. ปุ่มบันทึก
+                      const SizedBox(height: 30),
+
+                      // 📌 ปุ่มบันทึก
                       SizedBox(
                         width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton(
+                        height: 52,
+                        child: ElevatedButton.icon(
                           onPressed: _isSaving ? null : _saveTestResult,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          icon: _isSaving
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                )
+                              : const Icon(Icons.save, color: Colors.white),
+                          label: Text(
+                            _isSaving ? 'กำลังบันทึก...' : 'บันทึกผลการตรวจคุณภาพ',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                           ),
-                          child: _isSaving
-                              ? const CircularProgressIndicator(color: Colors.white)
-                              : const Text('บันทึกผลการตรวจคุณภาพ',
-                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0F766E),
+                            elevation: 2,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          ),
                         ),
                       ),
+                      const SizedBox(height: 20),
                     ],
                   ],
                 ),
@@ -293,18 +361,141 @@ class _QualityTestScreenState extends State<QualityTestScreen> {
     );
   }
 
-  Widget _buildNumberField(String label, TextEditingController controller) {
+  // --- Helper Widgets ---
+
+  Widget _buildSectionHeader({required IconData icon, required String title}) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: const Color(0xFF0F766E)),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.black87),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.amber.shade50,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.amber.shade200),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.inbox, size: 40, color: Colors.amber.shade700),
+          const SizedBox(height: 8),
+          Text(
+            'ไม่มีรายการน้ำยางที่รอตรวจคุณภาพ',
+            style: TextStyle(color: Colors.amber.shade900, fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFarmerInfoCard(PendingPurchase purchase) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.teal.shade50, Colors.teal.shade100.withOpacity(0.3)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.teal.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'รหัสการรับซื้อ: #${purchase.purchaseId}',
+                style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F766E), fontSize: 15),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0F766E),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${purchase.rubberWeight} กก.',
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                ),
+              )
+            ],
+          ),
+          const Divider(height: 16),
+          Row(
+            children: [
+              const Icon(Icons.person, size: 18, color: Colors.grey),
+              const SizedBox(width: 8),
+              Text('ชื่อเกษตรกร: ${purchase.farmerName}', style: const TextStyle(fontSize: 14)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNumberField({
+    required String label,
+    required TextEditingController controller,
+    required String unit,
+    required IconData icon,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
       child: TextFormField(
         controller: controller,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
         decoration: InputDecoration(
+          prefixIcon: Icon(icon, color: Colors.grey.shade600, size: 20),
+          suffixText: unit,
+          suffixStyle: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey),
           labelText: label,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          labelStyle: TextStyle(color: Colors.grey.shade700, fontSize: 14),
           filled: true,
-          fillColor: Colors.grey.shade50,
+          fillColor: Colors.white,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFF0F766E), width: 1.5),
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildDropdownContainer({required String label, required Widget child}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+          ),
+          child,
+        ],
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 // Services & Repositories
 import 'services/purchase_service.dart';
@@ -43,7 +44,7 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  @override
+ @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Rubber Latex System',
@@ -51,6 +52,10 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
+        // 📌 กำหนดฟอนต์ IBM Plex Sans Thai ให้ครอบคลุมทุก Text Style ของแอป
+        textTheme: GoogleFonts.ibmPlexSansThaiTextTheme(
+          Theme.of(context).textTheme,
+        ),
       ),
       home: const LoginScreen(),
     );

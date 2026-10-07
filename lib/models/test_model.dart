@@ -114,3 +114,26 @@ class PendingPurchase {
     );
   }
 }
+
+class FarmerTestSummaryModel {
+  final String farmerId;
+  final String farmerName;
+  final int totalTests;
+  final double avgDrc;
+
+  FarmerTestSummaryModel({
+    required this.farmerId,
+    required this.farmerName,
+    required this.totalTests,
+    required this.avgDrc,
+  });
+
+  factory FarmerTestSummaryModel.fromJson(Map<String, dynamic> json) {
+    return FarmerTestSummaryModel(
+      farmerId: json['farmer_id'] ?? '',
+      farmerName: json['farmer_name'] ?? '',
+      totalTests: int.tryParse(json['total_tests'].toString()) ?? 0,
+      avgDrc: double.tryParse(json['avg_drc'].toString()) ?? 0.0,
+    );
+  }
+}

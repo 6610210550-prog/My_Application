@@ -131,7 +131,6 @@ class TestService {
   // 📌 6. ดึงรายการตรวจคุณภาพแยกตามเกษตรกร (ค้นหาด้วยชื่อ/รหัส)
   Future<Result<List<Map<String, dynamic>>>> getTestsByFarmer({String search = ''}) async {
     try {
-      // 🟢 แก้ไข URL ไม่ให้ติด /api/test ซ้ำซ้อน
       final response = await http.get(
         Uri.parse('$baseUrl/by-farmer?search=$search'),
       );
@@ -143,6 +142,26 @@ class TestService {
           return Result.ok(List<Map<String, dynamic>>.from(data));
         }
         return Result.error(Exception(body['message'] ?? 'ดึงข้อมูลประวัติไม่สำเร็จ'));
+      }
+      return Result.error(Exception('Server Error (${response.statusCode})'));
+    } catch (e) {
+      return Result.error(Exception(e.toString()));
+    }
+  }
+
+  // 📌 7. ดึงข้อมูลสรุปผลการตรวจ DRC แยกตามเกษตรกร (สำหรับแสดงกราฟ)
+  Future<Result<List<FarmerTestSummaryModel>>> getFarmerTestSummary() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/summary-by-farmer'));
+
+      if (response.statusCode == 200) {
+        final body = json.decode(response.body);
+        if (body['success'] == true && body['data'] != null) {
+          final List list = body['data'];
+          final summaryList = list.map((item) => FarmerTestSummaryModel.fromJson(item)).toList();
+          return Result.ok(summaryList);
+        }
+        return Result.error(Exception(body['message'] ?? 'ดึงข้อมูลสรุปไม่สำเร็จ'));
       }
       return Result.error(Exception('Server Error (${response.statusCode})'));
     } catch (e) {

@@ -95,28 +95,7 @@ class PurchaseService {
     }
   }
 
-  // 📌 5. [แสดงจำนวน Purchase แยกตาม Price] ดึงสถิติตามราคารับซื้อ
-  Future<Result<List<Map<String, dynamic>>>> getPurchaseCountByPrice() async {
-  try {
-    final response = await http.get(
-      Uri.parse('$baseUrl/purchase/count-by-price'),
-    );
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      if (data['success'] == true && data['data'] != null) {
-        final List list = data['data'];
-        final resultList = list.map((item) => item as Map<String, dynamic>).toList();
-        return Result.ok(resultList);
-      }
-    }
-    return Result.error(Exception('ไม่สามารถดึงข้อมูลสถิติตามราคาได้'));
-  } catch (e) {
-    return Result.error(Exception(e.toString()));
-  }
-}
-
-  // 📌 ดึงข้อมูลรถ (ฟังก์ชันเดิมของคุณ)
   Future<Result<List<Map<String, dynamic>>>> getVehicles() async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/car/get_all_cars'));
@@ -130,6 +109,25 @@ class PurchaseService {
         }
       }
       return Result.error(Exception('ไม่สามารถดึงข้อมูลรถได้'));
+    } catch (e) {
+      return Result.error(Exception(e.toString()));
+    }
+  }
+
+  Future<Result<List<Map<String, dynamic>>>> getPurchaseCountByPrice() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/purchase/count-by-price'));
+
+      if (response.statusCode == 200) {
+        final body = json.decode(response.body);
+        if (body['success'] == true && body['data'] != null) {
+          final List<Map<String, dynamic>> data =
+              List<Map<String, dynamic>>.from(body['data']);
+          return Result.ok(data);
+        }
+        return Result.error(Exception(body['message'] ?? 'ดึงข้อมูลไม่สำเร็จ'));
+      }
+      return Result.error(Exception('Server Error (${response.statusCode})'));
     } catch (e) {
       return Result.error(Exception(e.toString()));
     }

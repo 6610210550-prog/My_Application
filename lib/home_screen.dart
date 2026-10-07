@@ -29,7 +29,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final PageController _bannerController = PageController();
   Timer? _bannerTimer;
   int _currentBannerIndex = 0;
-  final List<String> _bannerImages = ['assets/banner.png', 'assets/pr1.jpg'];
+  final List<String> _bannerImages = ['assets/banner.png', 'assets/t1.jpg' , 'assets/t2.jpg' , 'assets/t3.jpg' , 'assets/pr1.jpg'];
 
   @override
   void initState() {

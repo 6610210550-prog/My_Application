@@ -45,7 +45,7 @@ class _RegisterFarmerScreenState extends State<RegisterFarmerScreen> {
     BankModel(code: 'BBL', name: 'ธนาคารกรุงเทพ', color: Color(0xFF1E3A8A)),
     BankModel(code: 'BAY', name: 'ธนาคารกรุงศรีอยุธยา', color: Color(0xFFF8A100)),
     BankModel(code: 'GSB', name: 'ธนาคารออมสิน', color: Color(0xFFEB1985)),
-    BankModel(code: 'BAAC', name: 'ธ.ก.ส. (เพื่อการเกษตรฯ)', color: Color(0xFF006837)),
+    
   ];
 
   bool _isLoading = false;

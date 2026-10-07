@@ -16,7 +16,7 @@ class _PurchaseListScreenState extends State<PurchaseListScreen> {
   List<Map<String, dynamic>> _purchases = [];
   bool _isLoading = false;
 
-  // 📌 รายการราคารับซื้อสำหรับ Dropdown
+  // 📌 รายการราคารับซื้อสำหรับ Dropdown และ Chart
   List<Map<String, dynamic>> _priceAnalyticsList = [];
   String _selectedPriceId = 'ALL';
   bool _isLoadingAnalytics = false;
@@ -62,7 +62,7 @@ class _PurchaseListScreenState extends State<PurchaseListScreen> {
     }
   }
 
-  // 2. ดึงสถิติตามราคาใส่ Dropdown (แปลง Type อย่างปลอดภัย)
+  // 2. ดึงสถิติตามราคาใส่ Dropdown / Chart (แปลง Type อย่างปลอดภัย)
   Future<void> _fetchPriceAnalytics() async {
     setState(() => _isLoadingAnalytics = true);
     final result = await _purchaseService.getPurchaseCountByPrice();
@@ -80,6 +80,135 @@ class _PurchaseListScreenState extends State<PurchaseListScreen> {
         }
       });
     }
+  }
+
+  // 📊 ฟังก์ชันแสดง Bottom Sheet สถิติราคารับซื้อ
+  void _showChartBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        // คำนวณหาค่า max เพื่อใช้วาดความยาวของหลอดกราฟ
+        double maxCount = 1;
+        for (var item in _priceAnalyticsList) {
+          final count = double.tryParse(item['total_count']?.toString() ?? '0') ?? 0;
+          if (count > maxCount) maxCount = count;
+        }
+
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 16,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: const [
+                  Icon(Icons.bar_chart_rounded, color: Color(0xFF0F766E), size: 26),
+                  SizedBox(width: 8),
+                  Text(
+                    'สถิติการรับซื้อแยกตามราคา',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              _priceAnalyticsList.isEmpty
+                  ? const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 32.0),
+                      child: Center(child: Text('ไม่มีข้อมูลสถิติมูลค่าราคา')),
+                    )
+                  : ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: _priceAnalyticsList.length,
+                      itemBuilder: (context, index) {
+                        final item = _priceAnalyticsList[index];
+                        final price = item['price_value'] ?? item['price'] ?? '0';
+                        final count = int.tryParse(item['total_count']?.toString() ?? '0') ?? 0;
+                        final percent = count / maxCount;
+
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'ราคา $price บาท/กก.',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                      color: Color(0xFF1E293B),
+                                    ),
+                                  ),
+                                  Text(
+                                    '$count รายการ',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                      color: Color(0xFF0F766E),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              Stack(
+                                children: [
+                                  Container(
+                                    height: 10,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFE2E8F0),
+                                      borderRadius: BorderRadius.circular(5),
+                                    ),
+                                  ),
+                                  FractionallySizedBox(
+                                    widthFactor: percent > 0 ? percent : 0.02,
+                                    child: Container(
+                                      height: 10,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF0F766E),
+                                        borderRadius: BorderRadius.circular(5),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   // 3. ฟังก์ชันกรองรายการรับซื้อ
@@ -438,7 +567,7 @@ class _PurchaseListScreenState extends State<PurchaseListScreen> {
       ),
       body: Column(
         children: [
-          // Dropdown เลือกราคารับซื้อเพื่อกรองรายการ
+          // Dropdown เลือกราคารับซื้อเพื่อกรองรายการ + ปุ่มดูกราฟ
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Container(
@@ -459,12 +588,43 @@ class _PurchaseListScreenState extends State<PurchaseListScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    children: const [
-                      Icon(Icons.filter_alt_outlined, size: 20, color: Color(0xFF0F766E)),
-                      SizedBox(width: 6),
-                      Text(
-                        'กรองรายการรับซื้อตามราคา',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF0F172A)),
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: const [
+                          Icon(Icons.filter_alt_outlined, size: 20, color: Color(0xFF0F766E)),
+                          SizedBox(width: 6),
+                          Text(
+                            'กรองรายการรับซื้อตามราคา',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF0F172A)),
+                          ),
+                        ],
+                      ),
+                      // 📌 ปุ่มกดเปิดดูกราฟ
+                      InkWell(
+                        onTap: _showChartBottomSheet,
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFCCFBF1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: const [
+                              Icon(Icons.bar_chart_rounded, size: 18, color: Color(0xFF0F766E)),
+                              SizedBox(width: 4),
+                              Text(
+                                'ดูกราฟ',
+                                style: TextStyle(
+                                  color: Color(0xFF0F766E),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ],
                   ),

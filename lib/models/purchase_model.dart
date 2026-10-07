@@ -2,12 +2,12 @@ class PurchaseRecord {
   final String farmerId;
   final double weightIn;
   final double weightOut;
-  final double rubberWeight; // น้ำหนักยางสด
-  final double drc;          // % DRC
-  final double netWeight;    // น้ำหนักยางแห้ง
-  final String priceId;      // วันที่อ้างอิงราคารับซื้อ (YYYY-MM-DD)
-  final double totalPrice;   // ราคารวม
-  final String rubberType;   // ประเภท (เช่น สด)
+  final double rubberWeight; 
+  final double drc;          
+  final double netWeight;    
+  final String priceId;      
+  final double totalPrice;   
+  final String rubberType;   
 
   PurchaseRecord({
     required this.farmerId,
